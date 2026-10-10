@@ -11,10 +11,12 @@ constexpr gpio_num_t kTxPin = GPIO_NUM_46;
 constexpr uint32_t kResolutionHz = 1000000;
 constexpr unsigned kFrameCount = 3;
 constexpr uint32_t kFramePeriodUs = 45000;
+constexpr uint32_t kBatteryRefreshMs = 30000;
 
 rmt_channel_handle_t txChannel = nullptr;
 rmt_encoder_handle_t encoder = nullptr;
 bool hardwareReady = false;
+uint32_t lastBatteryRefresh = 0;
 wonder::GestureRecognizer buttonA;
 wonder::GestureRecognizer buttonB;
 const char *lastSent = "Ready";
@@ -41,6 +43,13 @@ void render() {
   M5.Display.printf("Last: %s\n", lastSent);
   M5.Display.println("Sony SIRC15 40 kHz");
   M5.Display.println("Single waits 350 ms");
+  const int batteryLevel = M5.Power.getBatteryLevel();
+  if (batteryLevel >= 0 && batteryLevel <= 100) {
+    M5.Display.printf("Battery: %d%%\n", batteryLevel);
+  } else {
+    M5.Display.println("Battery: N/A");
+  }
+  lastBatteryRefresh = millis();
 }
 
 bool initIr() {
@@ -162,4 +171,5 @@ void loop() {
   M5.update();
   serviceButton(wonder::Button::A, buttonA, M5.BtnA, true);
   serviceButton(wonder::Button::B, buttonB, M5.BtnB, false);
+  if (millis() - lastBatteryRefresh >= kBatteryRefreshMs) render();
 }
